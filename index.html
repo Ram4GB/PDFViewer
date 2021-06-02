@@ -118,7 +118,7 @@
         function renderPage(pageNum = 1) {
             _pdf.getPage(pageNum)
                 .then(function (page) {
-                    var scale = 1;
+                    var scale = 1.5;
                     var viewport = page.getViewport({ scale: scale });
                     var scrollHolder = document.getElementById("scroll-holder");
 
@@ -163,7 +163,8 @@
             let circle = document.createElement("div");
             circle.style.left = x - 25;
             circle.style.top = y - 25;
-            circle.style.backgroundImage = `url("./${signPic}")`
+            // circle.style.backgroundImage = `url("./${signPic}")`
+            circle.innerHTML = person
             circle.id = "sign_" + personId;
             circle.classList.add("circle");
 
