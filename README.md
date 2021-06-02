@@ -7,6 +7,8 @@
 
 ![alt](./picture.gif)
 
+![alt](./picture2.gif)
+
 ## [UPDATING] Ký trên pdf
 
 https://stackoverflow.com/questions/3455016/how-are-pdf-sizes-specified
