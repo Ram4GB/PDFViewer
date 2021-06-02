@@ -5,7 +5,7 @@
 - Hiển thị pdf trên brower
 - Hiển thị giá trị xy trong file pdf
 
-![alt](./ezgif.com-gif-maker.gif)
+![alt](./picture.gif)
 
 ## [UPDATING] Ký trên pdf
 
