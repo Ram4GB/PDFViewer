@@ -1,0 +1,233 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Work+Sans&display=swap");
+
+            * {
+                font-family: "Work Sans", sans-serif;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            canvas {
+                height: 842px;
+                width: 595px;
+                border: 0.1px solid #111;
+            }
+
+            #scroll-holder {
+                height: 842px;
+                width: 595px;
+                border: 1px solid black;
+                overflow-y: scroll;
+                overflow-x: hidden;
+                display: block;
+                margin: auto;
+            }
+
+            .circle {
+                width: 50px;
+                height: 50px;
+                position: absolute;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                background-size: contain;
+                background-repeat: no-repeat;
+            }
+
+            .circle:hover {
+                border: 1px solid #111;
+            } 
+
+            .container {
+                text-align: center;
+            }
+
+            #signPeople {
+                position: fixed;
+                font-size: 10px;
+                padding: 0;
+            }
+
+            #signPeople li {
+                padding: 5px;
+                background-color: #111;
+                color: #fff;
+                margin: 5px;
+            }
+
+            #signedPeople {
+                position: fixed;
+                right: 0;
+                top: 0;
+                font-size: 10px;
+                padding: 0;
+            }
+
+            #signedPeople li {
+                padding: 5px;
+                background-color: #111;
+                color: #fff;
+                margin: 5px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <ul id="signPeople">
+            <li>Người ký</li>
+            <li id="lmc" onclick="choosePerson('Lê Minh Cường', 'lmc', 'cuong.png')">
+                Lê Minh Cường
+            </li>
+            <li id="nan" onclick="choosePerson('Nguyễn An Ninh', 'nan', 'ninh.png')">
+                Nguyễn An Ninh
+            </li>
+            <li id="ndt" onclick="choosePerson('Ngũ Đức Thuận', 'ndt', 'thuan.png')">
+                Ngũ Đức Thuận
+            </li>
+            <li id="htd" onclick="choosePerson('Hán Thái Diêm', 'htd', 'diem.png')">
+                Hán Thái Diêm
+            </li>
+        </ul>
+        <ul id="signedPeople">
+            <li>Người đã ký</li>
+        </ul>
+        <div class="container">
+            <div class="" id="scroll-holder"></div>
+        </div>
+    </body>
+
+    <script>
+        var pdfjsLib = window["pdfjs-dist/build/pdf"];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "//mozilla.github.io/pdf.js/build/pdf.worker.js";
+
+        let _pdf = null;
+        let loadingTask = null;
+        let person = null;
+        let personId = null;
+        let signPic = null
+        let signed = [];
+
+        function renderPage(pageNum = 1) {
+            _pdf.getPage(pageNum)
+                .then(function (page) {
+                    var scale = 1;
+                    var viewport = page.getViewport({ scale: scale });
+                    var scrollHolder = document.getElementById("scroll-holder");
+
+                    let canvas = document.createElement("canvas");
+                    canvas.id = "canvas" + pageNum;
+
+                    let wrapDiv = document.createElement("div");
+                    wrapDiv.id = "wrapDiv" + pageNum;
+                    wrapDiv.style.position = "relative";
+                    wrapDiv.appendChild(canvas);
+
+                    scrollHolder.appendChild(wrapDiv);
+                    canvas.classList.add("canvas" + pageNum);
+                    canvas.addEventListener("click", function (evt) {
+                        getPosition(evt, pageNum);
+                    });
+
+                    var context = canvas.getContext("2d");
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport,
+                    };
+                    page.render(renderContext);
+                    currentPage = pageNum;
+                })
+                .catch((error) => console.log(error));
+        }
+
+        function getPosition(evt, pageNum) {
+            if (!person) {
+                alert("Mời chọn người ký");
+                return;
+            }
+
+            let rect = evt.target.getBoundingClientRect();
+            let x = evt.clientX - rect.left;
+            let y = evt.clientY - rect.top;
+            console.log("page", pageNum, "mouse x = ", x, "mouse y = ", y);
+
+            let circle = document.createElement("div");
+            circle.style.left = x - 25;
+            circle.style.top = y - 25;
+            circle.style.backgroundImage = `url("./${signPic}")`
+            circle.id = "sign_" + personId;
+            circle.classList.add("circle");
+
+            circle.addEventListener("click", (function(person, personId, signPic) {
+                return function() {
+                    if (confirm("Bạn có chắc chắn muốn xóa")) {
+                        let li = document.createElement("li");
+                        li.id = personId;
+                        li.innerHTML = person;
+                        li.onclick = function () {
+                            choosePerson(person, personId, signPic);
+                        };
+                        document.getElementById("signPeople").appendChild(li);
+                        signed = signed.filter(item => item.personId !== personId)
+                        circle.remove();
+                        renderSigned()
+                    }
+                }
+            })(person, personId, signPic));
+            
+            document.getElementById("wrapDiv" + pageNum).appendChild(circle);
+            document.getElementById(personId).remove();
+            document.getElementById('scroll-holder').style.cursor = `auto`
+
+            signed.push({
+                person,
+                personId,
+                x,
+                y,
+                pageNum
+            });
+
+            person = null;
+            personId = null;
+            signPic = null
+
+            renderSigned()
+        }
+
+        function choosePerson(name, id, pic) {
+            person = name;
+            personId = id;
+            signPic = pic
+            document.getElementById('scroll-holder').style.cursor = `url("./Designcontest-Vintage-Pen.png") 25 15, auto`
+        }
+
+        function renderSigned() {
+            let array = []
+            for(let i = 0 ; i < signed.length; i++) {
+                let item = signed[i]
+                array.push(`<li>${item.person}</p> x =${item.x}, y = ${item.y}, pageNum = ${item.pageNum}</li>`)
+            }
+            document.getElementById('signedPeople').innerHTML = array
+        }
+
+        window.onload = function () {
+            loadingTask = pdfjsLib.getDocument("leminhcuong027.pdf");
+            loadingTask.promise.then(async function (pdf) {
+                _pdf = pdf;
+                for (let i = 1; i <= _pdf.numPages; i++) {
+                    await renderPage(i);
+                }
+            });
+            renderSigned()
+        };
+    </script>
+</html>
